@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /panel/
+Disallow: /admin/
+Disallow: /payment/
+
+Sitemap: https://groohbaz.com/sitemap.xml
