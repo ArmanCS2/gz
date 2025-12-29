@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Livewire\Home;
 use App\Livewire\Store\Index as StoreIndex;
 use App\Livewire\Store\Show as StoreShow;
@@ -66,7 +67,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', function () {
-    auth()->logout();
+    Auth::logout();
     return redirect()->route('home');
 })->name('logout');
 
