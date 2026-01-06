@@ -42,15 +42,23 @@
     ];
     
     // Build item list elements
+    // Only include products with images (required by Google)
+    $validProducts = [];
     foreach ($ads as $index => $ad) {
+        // Skip products without images (Google requires image field)
+        if (!$ad->cover_image) {
+            continue;
+        }
+        
         $item = [
             '@type' => 'ListItem',
-            'position' => $index + 1,
+            'position' => count($validProducts) + 1,
             'item' => [
                 '@type' => 'Product',
                 'name' => $ad->title,
                 'description' => Str::limit($ad->description, 150),
-                'url' => route('store.show', $ad->slug)
+                'url' => route('store.show', $ad->slug),
+                'image' => $ad->cover_image // Required field - already verified above
             ]
         ];
         
@@ -58,12 +66,52 @@
             $item['item']['offers'] = [
                 '@type' => 'Offer',
                 'price' => (string)$ad->price,
-                'priceCurrency' => 'IRR'
+                'priceCurrency' => 'IRR',
+                'availability' => 'https://schema.org/InStock',
+                'hasMerchantReturnPolicy' => [
+                    '@type' => 'MerchantReturnPolicy',
+                    'applicableCountry' => 'IR',
+                    'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                    'merchantReturnDays' => 7,
+                    'returnMethod' => 'https://schema.org/ReturnByMail',
+                    'returnFees' => 'https://schema.org/FreeReturn'
+                ],
+                'shippingDetails' => [
+                    '@type' => 'OfferShippingDetails',
+                    'shippingRate' => [
+                        '@type' => 'MonetaryAmount',
+                        'value' => '0',
+                        'currency' => 'IRR'
+                    ],
+                    'shippingDestination' => [
+                        '@type' => 'DefinedRegion',
+                        'addressCountry' => 'IR'
+                    ],
+                    'deliveryTime' => [
+                        '@type' => 'ShippingDeliveryTime',
+                        'handlingTime' => [
+                            '@type' => 'QuantitativeValue',
+                            'minValue' => 1,
+                            'maxValue' => 3,
+                            'unitCode' => 'DAY'
+                        ],
+                        'transitTime' => [
+                            '@type' => 'QuantitativeValue',
+                            'minValue' => 1,
+                            'maxValue' => 5,
+                            'unitCode' => 'DAY'
+                        ]
+                    ]
+                ]
             ];
         }
         
-        $webPageSchema['mainEntity']['itemListElement'][] = $item;
+        $validProducts[] = $item;
     }
+    
+    // Update numberOfItems to match valid products
+    $webPageSchema['mainEntity']['numberOfItems'] = count($validProducts);
+    $webPageSchema['mainEntity']['itemListElement'] = $validProducts;
     
     // Build FAQ schema
     $faqSchema = null;

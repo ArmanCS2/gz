@@ -399,6 +399,18 @@
         'name' => $ad->title,
         'item' => route('store.show', $ad->slug)
     ];
+    
+    // Ensure image is always present (required by Google)
+    // Use cover_image if available, otherwise fallback to site logo or favicon
+    $productImage = $ad->cover_image;
+    if (!$productImage) {
+        $siteSettings = \App\Models\SiteSetting::getSettings();
+        if ($siteSettings->logo) {
+            $productImage = url($siteSettings->logo);
+        } else {
+            $productImage = url('favicon.ico');
+        }
+    }
 @endphp
 <script type="application/ld+json">
 {!! json_encode(array_filter([
@@ -406,7 +418,7 @@
     '@type' => 'Product',
     'name' => $ad->title,
     'description' => \Illuminate\Support\Str::limit($ad->description, 200),
-    'image' => $ad->cover_image,
+    'image' => $productImage,
     'url' => route('store.show', $ad->slug),
     'brand' => [
         '@type' => 'Brand',
@@ -421,6 +433,41 @@
             '@type' => 'Person',
             'name' => $ad->user->name ?? 'مالک',
         ],
+        'hasMerchantReturnPolicy' => [
+            '@type' => 'MerchantReturnPolicy',
+            'applicableCountry' => 'IR',
+            'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            'merchantReturnDays' => 7,
+            'returnMethod' => 'https://schema.org/ReturnByMail',
+            'returnFees' => 'https://schema.org/FreeReturn'
+        ],
+        'shippingDetails' => [
+            '@type' => 'OfferShippingDetails',
+            'shippingRate' => [
+                '@type' => 'MonetaryAmount',
+                'value' => '0',
+                'currency' => 'IRR'
+            ],
+            'shippingDestination' => [
+                '@type' => 'DefinedRegion',
+                'addressCountry' => 'IR'
+            ],
+            'deliveryTime' => [
+                '@type' => 'ShippingDeliveryTime',
+                'handlingTime' => [
+                    '@type' => 'QuantitativeValue',
+                    'minValue' => 1,
+                    'maxValue' => 3,
+                    'unitCode' => 'DAY'
+                ],
+                'transitTime' => [
+                    '@type' => 'QuantitativeValue',
+                    'minValue' => 1,
+                    'maxValue' => 5,
+                    'unitCode' => 'DAY'
+                ]
+            ]
+        ]
     ],
     'aggregateRating' => $ad->approvedReviews->count() > 0 ? [
         '@type' => 'AggregateRating',
